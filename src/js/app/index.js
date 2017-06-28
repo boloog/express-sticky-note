@@ -1,3 +1,18 @@
-const obj = require('../mod/b.js')
+require('less/index.less')
 
-console.log(obj)
+const NoteManager = require('../mod/note-manager.js')
+const Event = require('../mod/event.js')
+const WaterFall = require('../mod/waterfall.js')
+const GoTop = require('../mod/gotop.js')
+
+NoteManager.load();
+
+$('.add-note').on('click', function(){
+	NoteManager.add();
+})
+//
+Event.on('waterfall', function(){
+	WaterFall.init($('#contents'));
+})
+
+GoTop.init($('.goTop'));

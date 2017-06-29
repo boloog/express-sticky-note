@@ -9,7 +9,6 @@ var Note = (function(){
 		this.initOpts(opts);
 	}
 	_note.prototype.initOpts = function(opts){
-		console.log( opts )
 		var contents = $('#contents'),
 			defaultOptions = {
 				id: '',
@@ -24,7 +23,7 @@ var Note = (function(){
 
 		var tpl = '<div class="note transition">'
 			+ '<div class="note-head"></div>'
-			+ '<div class="note-context" contenteditable="true"></div>'
+			+ '<div class="note-context" contenteditable="plaintext-only"></div>'
 			+ '<p class="username u-t"></p><p class="time u-t">'+new Date().toLocaleString('chinese',{hour12:false})+'</p><span class="delete">&times;</span>'
 			+ '</div>';
 		this.note = $(tpl);
@@ -44,7 +43,6 @@ var Note = (function(){
 		var colors = ['#64aaff','#fede89','#ffbfcd','#a4bdff', '#b194fe','#3fe0d0','#00dba', '#7c8bfe']
 		var color = colors[Math.floor(Math.random()*7)];
 		this.note.find('.note-head').css('background-color', color );
-		// this.note.find('.note-context').css('background-color', color[1]);
 		this.bindEvent();
 	}
 	_note.prototype.setLayout = function(){
@@ -62,27 +60,29 @@ var Note = (function(){
 			note = this.note,
 			noteHead = note.find('.note-head'),
 			noteCont = note.find('.note-context'),
-			noteTime = note.find('.time');
-			delBtn = note.find('.delete');
+			noteTime = note.find('.time'),
+			delBtn = note.find('.delete'),
+			beforeNoteCont = noteCont.html();
 		noteCont.on('focus', function(){
 			note.siblings().css('zIndex', 0);
 			note.css('zIndex', 999);
 			if( noteCont.html() == '点这里输入内容'){
 				noteCont.html('');
 			}
-			noteCont.data('before', noteCont.html() );
+			noteCont.data('before', beforeNoteCont );
 		}).on('blur paste', function(){
 			if(noteCont.data('before') != noteCont.html() ){
-				noteCont.data('before', noteCont.html() );
-				_this.setLayout();
+				if(noteCont.html() == '' ||  noteCont.html() == '<br>'){
+					noteCont.html(beforeNoteCont);
+					Toast.init('内容不能为空..');
+					return;
+				}
 				if(_this.id){
-					if( noteCont.html() == ''){
-						noteCont.html('点这里输入内容');
-					}
-					_this.editMsg(noteCont.html(),noteTime)
+					_this.editMsg(noteCont, noteTime)
 				}else{
 					_this.addMsg(noteCont.html())
 				}
+				_this.setLayout();
 			}
 		});
 		note.hover(function() {
@@ -94,6 +94,7 @@ var Note = (function(){
 		// 删除
 		delBtn.on('click', function(){
 			_this.deleteMsg(noteCont.html());
+			_this.setLayout();
 		})
 		// 点击头部移动
 		noteHead.on('mousedown', function(e){
@@ -115,9 +116,13 @@ var Note = (function(){
 				left: e.pageX - $('.draggable').data('evtPos').x
 			})
 		});
-
 	}
-	_note.prototype.editMsg = function(msg, noteTime){
+	_note.prototype.editMsg = function(noteCont, noteTime ){
+		var beforeNoteCont = noteCont.data('before');
+		var msg = noteCont.html();
+
+		console.log('这里编辑之前的值', beforeNoteCont )
+		console.log('这里编辑之后', msg )
 		$.post('/api/notes/edit', {
 			id: this.id,
 			note: msg
@@ -126,6 +131,7 @@ var Note = (function(){
 				Toast.init('编辑成功');
 				noteTime.html(new Date().toLocaleString('chinese',{hour12:false}))
 			}else{
+				noteCont.html(beforeNoteCont)
 				Toast.init(ret.errorMsg);
 			}
 		})
@@ -144,7 +150,6 @@ var Note = (function(){
 					username: ret.result.username
 				});
 				Toast.init('添加成功');
-				Event.fire('waterfall');
 			}else{
 				_this.note.remove();
 				Toast.init(ret.errorMsg);
@@ -156,11 +161,9 @@ var Note = (function(){
 		$.post('/api/notes/delete', {
 			id: _this.id
 		}).done(function(ret){
-			// console.log('删除成功', ret);
 			if(ret.status === 0){
 				Toast.init('删除成功');
 				_this.note.remove();
-				Event.fire('waterfall');
 			}else{
 				Toast.init(ret.errorMsg);
 			}

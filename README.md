@@ -12,7 +12,7 @@ express-sticky-note
 - `git clone git@github.com:boloog/express-sticky-note.git`
 - `npm i`
 - `node bin/www`
-- `open http://localhost:3202/`
+- `open http://localhost:3000/`
 
 ## 相关技能
 - `HTML5+CSS3`（实现页面布局和动态效果）

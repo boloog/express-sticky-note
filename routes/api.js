@@ -59,7 +59,7 @@ router.post('/notes/edit', function(req, res, next) {
 	var uid = req.session.user.id;
 	var update =  new Date().getTime();
 	Note.update({text: note, updatedAt: update },{where: {id: noteId, uid: uid }, returning: true, plain: true }).then( (lists) => {
-		if(lists[0] === 0){
+		if(lists[1] === 0){
 		    return res.send({ status: 1,errorMsg: '你没有权限'});
 		}
 		res.send({status: 0 })
